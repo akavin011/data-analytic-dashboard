@@ -4,12 +4,16 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
+const port = 5001;
+
+// Load environment variables from .env file
+require('dotenv').config();
 
 // Cloudinary configuration
 cloudinary.config({
-    cloud_name: "dpoufodoc",
-    api_key: "419293463141733",
-    api_secret: "OWPBFCsRlJVDv8M8QAF4ODL6egk",
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const app = express();
@@ -73,6 +77,6 @@ app.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // Start server
-app.listen(5000, () => {
-    console.log('Server running on port 5000');
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
