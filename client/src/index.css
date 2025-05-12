@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -14,4 +16,261 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Resize cursor utilities */
+.cursor-ew-resize {
+  cursor: ew-resize;
+}
+
+.select-none {
+  user-select: none;
+}
+
+/* Chat message formatting - Base styles */
+.chat-message {
+  color: #e2e8f0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Heading styles */
+.chat-message h1 {
+  color: #c084fc;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 2rem 0 1.25rem;
+  text-transform: uppercase;
+}
+
+.chat-message h2 {
+  color: #818cf8;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.75rem 0 1rem;
+}
+
+.chat-message h3 {
+  color: #60a5fa;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+}
+
+/* Numbered sections */
+.chat-message .section-number {
+  color: #60a5fa;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0 0.5rem;
+}
+
+/* List and content styles */
+.chat-message p {
+  color: #e2e8f0;
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.chat-message .bullet-point {
+  display: flex;
+  align-items: baseline;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+  color: #e2e8f0;
+}
+
+/* Category and labels */
+.chat-message .category {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.chat-message .description {
+  color: #e2e8f0;
+  margin-left: 0.5rem;
+}
+
+/* Lists */
+.chat-message ul {
+  list-style-type: none;
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.chat-message li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #e2e8f0;
+}
+
+.chat-message li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #60a5fa;
+}
+
+/* Main heading (###) */
+.chat-message .heading-main {
+  color: #c084fc;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 2rem 0 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Secondary heading (##) */
+.chat-message .heading-secondary {
+  color: #818cf8;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.75rem 0 1rem;
+}
+
+/* Tertiary heading (#) */
+.chat-message .heading-tertiary {
+  color: #60a5fa;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+}
+
+/* Numbered sections */
+.chat-message .section-number {
+  color: #60a5fa;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* List items and content */
+.chat-message p {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  color: #e2e8f0;
+}
+
+.chat-message .bullet-point {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.chat-message .bullet-point::before {
+  content: "•";
+  color: #60a5fa;
+  font-size: 1.2em;
+}
+
+/* Year ranges and categories */
+.chat-message .category-label {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+/* Description text */
+.chat-message .description {
+  color: #e2e8f0;
+  margin-left: 1rem;
+}
+
+/* Remove previous heading styles */
+.chat-message h2,
+.chat-message h3 {
+  all: unset;
+}
+
+/* Style for nested content */
+.chat-message .nested-content {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Style for bold text (remove ** symbols) */
+.chat-message strong {
+  font-weight: 600;
+  color: #93c5fd;
+}
+
+/* Style for bullet points */
+.chat-message ul {
+  list-style-type: none;
+  margin: 0.5rem 0;
+  padding-left: 1rem;
+}
+
+.chat-message ul {
+  @apply ml-6 mb-3;
+}
+
+.chat-message ul li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.chat-message li {
+  @apply mb-2 text-gray-300;
+}
+
+.chat-message ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #60a5fa;
+}
+
+/* Style for section breaks */
+.chat-message hr {
+  border: 0;
+  border-top: 1px solid #4b5563;
+  margin: 1.5rem 0;
+}
+
+/* Style for heading hierarchy indicators */
+.chat-message .section-number {
+  color: #60a5fa;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+/* Scroll styling */
+.scrollbar-thin::-webkit-scrollbar {
+  @apply w-2;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  @apply bg-gray-700;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 rounded-full;
+}
+
+.text-5xl {
+    font-family: 'Orbitron', sans-serif;
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .5;
+    }
 }

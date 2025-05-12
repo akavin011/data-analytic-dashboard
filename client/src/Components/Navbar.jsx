@@ -1,26 +1,24 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 const Navbar = () => {
-    return (
-        <nav className="bg-gray-900 text-white p-4 mb-20">
-            <div className="container mx-auto flex justify-between items-center">
-                {/* Logo with custom styling */}
-                <h1 className="text-4xl font-bold tracking-widest">
-                    <span className="text-blue-400">Data</span><span className="text-yellow-400">matic</span>
-                </h1>
-                <ul className="flex space-x-4">
-                    <li>
-                        <button className="bg-blue-500 text-white font-semibold py-2 px-4 rounded hover:bg-blue-600">
-                            Admin
-                        </button>
-                    </li>
+    const location = useLocation();
+    
+    // Don't show navbar on home page
+    if (location.pathname === '/') {
+        return null;
+    }
 
-                    <li>
-                        <button className="bg-blue-500 text-white font-semibold py-2 px-4 rounded hover:bg-blue-600">
-                            Login
-                        </button>
-                    </li>
-                </ul>
+    return (
+        <nav className="bg-transparent text-white p-6">
+            <div className="container mx-auto">
+                <h1 className="text-5xl font-extrabold tracking-wider text-center relative">
+                    <span className="text-blue-400 animate-pulse">Data</span>
+                    <span className="bg-gradient-to-r from-yellow-400 to-yellow-200 text-transparent bg-clip-text hover:scale-105 transition-transform">
+                        matic
+                    </span>
+                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-blue-400 to-yellow-400 rounded-full"></div>
+                </h1>
             </div>
         </nav>
     );

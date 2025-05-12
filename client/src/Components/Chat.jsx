@@ -1,6 +1,59 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Send, Upload } from "lucide-react";
+import { Send } from "lucide-react";
+
+const formatMessage = (text) => {
+  const lines = text.split('\n').filter(line => line.trim());
+  
+  return lines.map((line, index) => {
+    // Remove any remaining double asterisks
+    const cleanLine = line.replace(/\*\*/g, '');
+    
+    // Handle main headings (###)
+    if (cleanLine.startsWith('###')) {
+      return (
+        <h1 key={index}>
+          {cleanLine.replace(/###/g, '').trim()}
+        </h1>
+      );
+    }
+    
+    // Handle numbered sections
+    if (/^\d+\./.test(cleanLine)) {
+      const [number, ...rest] = cleanLine.split(' ');
+      return (
+        <div key={index} className="section-number">
+          <span>{number}</span>
+          <span className="category">{rest.join(' ')}</span>
+        </div>
+      );
+    }
+    
+    // Handle bullet points with descriptions
+    if (cleanLine.trim().startsWith('-')) {
+      const content = cleanLine.substring(1).trim();
+      if (content.includes(':')) {
+        const [category, description] = content.split(':').map(s => s.trim());
+        return (
+          <div key={index} className="bullet-point">
+            <span className="category">{category}</span>
+            <span className="description">{description}</span>
+          </div>
+        );
+      }
+      return (
+        <div key={index} className="bullet-point">
+          {content}
+        </div>
+      );
+    }
+    
+    // Regular text
+    return (
+      <p key={index}>{cleanLine}</p>
+    );
+  });
+};
 
 const ChatUI = () => {
   const [question, setQuestion] = useState("");
@@ -54,27 +107,25 @@ const ChatUI = () => {
       <div className="w-full max-w-3xl h-full flex flex-col bg-gray-800 rounded-lg shadow-md p-4 overflow-hidden">
         <h1 className="text-2xl font-semibold text-center mb-4">Datamatic Bot</h1>
 
-        {/* Chat Window */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-700">
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`max-w-[80%] p-3 rounded-xl ${
-                msg.sender === "user" ? "bg-blue-500 self-end" : "bg-gray-700 self-start"
+              className={`max-w-[95%] p-4 rounded-xl ${
+                msg.sender === "user"
+                  ? "bg-blue-500 ml-auto"
+                  : "bg-gray-700"
               }`}
             >
-              {msg.text.split(/(\*\*.*?\*\*)/).map((part, i) => {
-                if (part.startsWith('**') && part.endsWith('**')) {
-                  // Remove the ** and apply bold styling
-                  return <strong key={i}>{part.slice(2, -2)}</strong>;
-                }
-                return <span key={i}>{part}</span>;
-              })}
+              <div className="chat-message">
+                {msg.sender === "bot" ? formatMessage(msg.text) : msg.text}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Input Box */}
+        {/* Input Section */}
         <div className="flex items-center p-3 border-t border-gray-600">
           <input
             type="text"
@@ -82,17 +133,15 @@ const ChatUI = () => {
             placeholder="Ask me anything..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleSendMessage();
-              }
-            }}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           />
-          <button onClick={handleSendMessage} className="ml-3 bg-blue-500 p-3 rounded-lg">
+          <button 
+            onClick={handleSendMessage} 
+            className="ml-3 bg-blue-500 p-3 rounded-lg hover:bg-blue-600 transition-colors"
+          >
             <Send size={20} />
           </button>
         </div>
-
       </div>
     </div>
   );

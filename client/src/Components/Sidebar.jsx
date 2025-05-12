@@ -2,22 +2,8 @@ import React from 'react';
 
 const Sidebar = () => {
     return (
-        <div className="w-60 h-screen bg-gray-900 text-white p-6">
-            <h2 className="text-2xl font-bold mb-8">Dashboard</h2>
-            <ul className="list-none p-0 space-y-4">
-                <li className="cursor-pointer hover:bg-gray-700 p-2 rounded">
-                    <span className="text-gray-400 hover:text-white">Home</span>
-                </li>
-                <li className="cursor-pointer hover:bg-gray-700 p-2 rounded">
-                    <span className="text-gray-400 hover:text-white">Analytics</span>
-                </li>
-                <li className="cursor-pointer hover:bg-gray-700 p-2 rounded">
-                    <span className="text-gray-400 hover:text-white">Reports</span>
-                </li>
-                <li className="cursor-pointer hover:bg-gray-700 p-2 rounded">
-                    <span className="text-gray-400 hover:text-white">Settings</span>
-                </li>
-            </ul>
+        <div className="w-16 h-screen bg-transparent backdrop-blur-sm fixed left-0 top-0 flex flex-col items-center py-8">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-yellow-400 animate-pulse"></div>
         </div>
     );
 };
