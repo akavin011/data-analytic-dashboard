@@ -1,57 +1,101 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
+import { Send, Upload } from "lucide-react";
 
-function App() {
+const ChatUI = () => {
+  const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState(null);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const handleSendMessage = async () => {
+    if (!question.trim()) return;
 
-    const newMessages = [...messages, { text: input, sender: "user" }];
+    const newMessages = [...messages, { text: question, sender: "user" }];
     setMessages(newMessages);
-    setInput("");
-    setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/chat", { message: input });
-      setMessages([...newMessages, { text: res.data.reply, sender: "bot" }]);
-    } catch (err) {
-      setMessages([...newMessages, { text: "Error fetching response!", sender: "bot" }]);
-    }
+      const response = await axios.post("http://localhost:8001/ai21/ask", {
+        question,
+      });
 
-    setLoading(false);
+      setMessages([...newMessages, { text: response.data.answer, sender: "bot" }]);
+      setQuestion("");
+    } catch (error) {
+      console.error("Error:", error);
+      setMessages([...newMessages, { text: "Error getting response", sender: "bot" }]);
+    }
+  };
+
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    if (!file) return alert("Please select a file first!");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post("http://localhost:8002/ai21/upload-dataset", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert("File uploaded successfully: " + response.data.filename);
+      setFile(null);
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload file.");
+    }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white text-black">
-      <div className="p-4 bg-gray-100 text-center text-lg font-semibold border-b">Data Matic Bot</div>
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`p-3 rounded-lg w-fit max-w-xs ${msg.sender === "user" ? "bg-blue-500 text-white ml-auto" : "bg-gray-300 text-black"}`}
-          >
-            {msg.text}
-          </div>
-        ))}
-        {loading && <div className="text-gray-500">Thinking...</div>}
-      </div>
-      <div className="p-4 flex bg-gray-100 border-t">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="flex-1 p-2 bg-white border border-gray-300 rounded-l-lg focus:outline-none"
-          placeholder="Type a message..."
-        />
-        <button onClick={sendMessage} className="bg-blue-600 px-4 py-2 text-white rounded-r-lg">
-          Send
-        </button>
+    <div className="flex flex-col items-center w-full h-screen bg-gray-900 text-white p-4">
+      <div className="w-full max-w-3xl h-full flex flex-col bg-gray-800 rounded-lg shadow-md p-4 overflow-hidden">
+        <h1 className="text-2xl font-semibold text-center mb-4">Datamatic Bot</h1>
+
+        {/* Chat Window */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-700">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`max-w-[80%] p-3 rounded-xl ${
+                msg.sender === "user" ? "bg-blue-500 self-end" : "bg-gray-700 self-start"
+              }`}
+            >
+              {msg.text.split(/(\*\*.*?\*\*)/).map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  // Remove the ** and apply bold styling
+                  return <strong key={i}>{part.slice(2, -2)}</strong>;
+                }
+                return <span key={i}>{part}</span>;
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Input Box */}
+        <div className="flex items-center p-3 border-t border-gray-600">
+          <input
+            type="text"
+            className="flex-1 p-3 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none"
+            placeholder="Ask me anything..."
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSendMessage();
+              }
+            }}
+          />
+          <button onClick={handleSendMessage} className="ml-3 bg-blue-500 p-3 rounded-lg">
+            <Send size={20} />
+          </button>
+        </div>
+
       </div>
     </div>
   );
-}
+};
 
-export default App;
+export default ChatUI;

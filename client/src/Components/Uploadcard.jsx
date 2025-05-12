@@ -20,17 +20,54 @@ const UploadCard = () => {
     const reader = new FileReader();
     reader.onload = ({ target }) => {
       let data;
-      if (file.type.includes("csv")) {
-        data = Papa.parse(target.result, { header: true }).data;
-      } else if (file.type.includes("json")) {
-        data = JSON.parse(target.result);
-      }
+      try {
+        if (file.type.includes("csv")) {
+          data = Papa.parse(target.result, { header: true }).data;
+        } else if (file.type.includes("json")) {
+          data = JSON.parse(target.result);
+        }
 
-      localStorage.setItem("chartData", JSON.stringify(data));
-      navigate("/visualize");
+        // Analyze first 10 rows
+        const sampleData = data.slice(0, 10);
+        const analysis = analyzeData(data, sampleData);
+        
+        localStorage.setItem("chartData", JSON.stringify(data));
+        localStorage.setItem("dataAnalysis", JSON.stringify(analysis));
+        navigate("/visualize");
+      } catch (error) {
+        setUploadStatus("Error processing file: " + error.message);
+      }
     };
 
     reader.readAsText(file);
+  };
+
+  const analyzeData = (fullData, sampleData) => {
+    const columns = Object.keys(sampleData[0]);
+    const analysis = {};
+
+    columns.forEach(column => {
+      const uniqueValues = new Set(fullData.map(row => 
+        String(row[column]).toLowerCase().trim()
+      ));
+      
+      // Check if column might be boolean
+      const isBoolean = uniqueValues.size <= 3 && 
+        Array.from(uniqueValues).every(val => 
+          ['yes', 'no', 'maybe', ''].includes(val.toLowerCase())
+        );
+
+      // Check if column is numerical
+      const isNumeric = fullData.every(row => !isNaN(parseFloat(row[column])));
+
+      analysis[column] = {
+        type: isBoolean ? 'boolean' : isNumeric ? 'numeric' : 'text',
+        uniqueValues: Array.from(uniqueValues),
+        sample: sampleData.map(row => row[column])
+      };
+    });
+
+    return analysis;
   };
 
   return (
