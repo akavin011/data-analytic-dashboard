@@ -16,6 +16,39 @@ const CHART_TYPES = [
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
 
+const analyzeDataTypes = (data, sampleSize = 10) => {
+  if (!data || data.length === 0) return {};
+  
+  const sample = data.slice(0, Math.min(sampleSize, data.length));
+  const columns = Object.keys(data[0]);
+  const analysis = {};
+
+  columns.forEach(column => {
+    const values = sample.map(row => row[column]);
+    const types = values.map(value => {
+      if (value === null || value === '') return 'null';
+      if (!isNaN(value) && !isNaN(parseFloat(value))) return 'number';
+      if (typeof value === 'boolean' || value === 'true' || value === 'false') return 'boolean';
+      if (!isNaN(Date.parse(value))) return 'date';
+      return 'string';
+    });
+
+    // Get the most common type
+    const typeCount = types.reduce((acc, type) => {
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+
+    analysis[column] = {
+      type: Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0][0],
+      sample: values,
+      uniqueValues: [...new Set(values)].length
+    };
+  });
+
+  return analysis;
+};
+
 const CorrelationPage = () => {
   const [correlationData, setCorrelationData] = useState([]);
   const [columns, setColumns] = useState([]);
@@ -35,47 +68,59 @@ const CorrelationPage = () => {
       return;
     }
 
-    // Get numerical columns - fixed filter function
-    const numericalColumns = Object.keys(storedData[0]).filter(column =>
-      storedData.every(row => !isNaN(parseFloat(row[column])) && row[column] !== '')
+    // Analyze data types
+    const dataAnalysis = analyzeDataTypes(storedData);
+    console.log("Data Analysis:", dataAnalysis);
+
+    // Get numerical columns based on analysis
+    const numericalColumns = Object.entries(dataAnalysis)
+      .filter(([_, info]) => info.type === 'number')
+      .map(([column]) => column);
+
+    console.log("Numerical columns:", numericalColumns);
+
+    // Create clean numeric dataset
+    const numericDataset = storedData.map(row => {
+      const cleanRow = {};
+      numericalColumns.forEach(col => {
+        const value = parseFloat(row[col]);
+        cleanRow[col] = isNaN(value) ? null : value;
+      });
+      return cleanRow;
+    });
+
+    // Filter out rows with null values
+    const cleanDataset = numericDataset.filter(row => 
+      Object.values(row).every(value => value !== null)
     );
 
-    console.log("Numerical columns:", numericalColumns); // Debug log
+    console.log("Clean dataset size:", cleanDataset.length);
+    
     setColumns(numericalColumns);
-    calculateCorrelations(storedData, numericalColumns);
+    if (cleanDataset.length > 0) {
+      calculateCorrelations(cleanDataset, numericalColumns);
+    }
   }, [navigate, storedData]);
 
   const calculateCorrelations = (data, numericalColumns) => {
     const correlations = [];
     
-    // Convert string values to numbers first
-    const numericData = data.map(row => {
-      const newRow = {};
-      numericalColumns.forEach(col => {
-        newRow[col] = parseFloat(row[col]);
-      });
-      return newRow;
-    });
-    
     numericalColumns.forEach(col1 => {
       numericalColumns.forEach(col2 => {
-        const values1 = numericData.map(row => row[col1]);
-        const values2 = numericData.map(row => row[col2]);
+        const values1 = data.map(row => row[col1]);
+        const values2 = data.map(row => row[col2]);
         
         const correlation = calculatePearsonCorrelation(values1, values2);
-        
-        // Check if correlation is valid
-        const validCorrelation = !isNaN(correlation) ? correlation : 0;
         
         correlations.push({
           source: col1,
           target: col2,
-          correlation: validCorrelation
+          correlation: !isNaN(correlation) ? correlation : 0
         });
       });
     });
 
-    console.log("Correlation data:", correlations); // Debug log
+    console.log("Correlation matrix created with", correlations.length, "entries");
     setCorrelationData(correlations);
   };
 
@@ -134,92 +179,113 @@ const CorrelationPage = () => {
 
   const renderVisualization = (viz, index) => {
     // Prepare data for the chart
-    const chartData = storedData.map(row => {
-      const dataPoint = {};
-      viz.params.forEach(param => {
-        dataPoint[param] = parseFloat(row[param]);
-      });
-      return dataPoint;
-    });
+    const chartData = storedData.map(row => ({
+      x: parseFloat(row[viz.params[0]]),
+      y: parseFloat(row[viz.params[1]]),
+      name: viz.params[1]
+    }));
 
     const commonProps = {
       width: 500,
       height: 300,
       data: chartData,
-      margin: { top: 20, right: 30, left: 20, bottom: 50 }
+      margin: { top: 20, right: 30, left: 50, bottom: 50 }
     };
 
     switch (viz.chartType) {
       case 'line':
         return (
           <LineChart {...commonProps}>
-            <XAxis dataKey={viz.params[0]} />
-            <YAxis />
+            <XAxis 
+              dataKey="x" 
+              name={viz.params[0]}
+              label={{ value: viz.params[0], position: 'bottom' }}
+            />
+            <YAxis
+              dataKey="y"
+              name={viz.params[1]}
+              label={{ value: viz.params[1], angle: -90, position: 'left' }}
+            />
             <Tooltip />
             <Legend />
-            {viz.params.slice(1).map((param, i) => (
-              <Line
-                key={param}
-                type="monotone"
-                dataKey={param}
-                stroke={COLORS[i % COLORS.length]}
-              />
-            ))}
+            <Line
+              type="monotone"
+              dataKey="y"
+              name={viz.params[1]}
+              stroke={COLORS[0]}
+              dot={{ fill: COLORS[0] }}
+            />
           </LineChart>
         );
 
       case 'scatter':
         return (
           <ScatterChart {...commonProps}>
-            <XAxis dataKey={viz.params[0]} />
-            <YAxis />
-            <Tooltip />
+            <XAxis 
+              dataKey="x" 
+              name={viz.params[0]}
+              label={{ value: viz.params[0], position: 'bottom' }}
+            />
+            <YAxis
+              dataKey="y"
+              name={viz.params[1]}
+              label={{ value: viz.params[1], angle: -90, position: 'left' }}
+            />
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} />
             <Legend />
-            {viz.params.slice(1).map((param, i) => (
-              <Scatter
-                key={param}
-                name={param}
-                data={chartData}
-                fill={COLORS[i % COLORS.length]}
-                dataKey={param}
-              />
-            ))}
+            <Scatter
+              name={viz.params[1]}
+              data={chartData}
+              fill={COLORS[0]}
+            />
           </ScatterChart>
         );
 
       case 'area':
         return (
           <AreaChart {...commonProps}>
-            <XAxis dataKey={viz.params[0]} />
-            <YAxis />
+            <XAxis 
+              dataKey="x" 
+              name={viz.params[0]}
+              label={{ value: viz.params[0], position: 'bottom' }}
+            />
+            <YAxis
+              dataKey="y"
+              name={viz.params[1]}
+              label={{ value: viz.params[1], angle: -90, position: 'left' }}
+            />
             <Tooltip />
             <Legend />
-            {viz.params.slice(1).map((param, i) => (
-              <Area
-                key={param}
-                type="monotone"
-                dataKey={param}
-                fill={COLORS[i % COLORS.length]}
-                stroke={COLORS[i % COLORS.length]}
-              />
-            ))}
+            <Area
+              type="monotone"
+              dataKey="y"
+              name={viz.params[1]}
+              fill={COLORS[0]}
+              stroke={COLORS[0]}
+            />
           </AreaChart>
         );
 
       default: // bar chart
         return (
           <BarChart {...commonProps}>
-            <XAxis dataKey={viz.params[0]} />
-            <YAxis />
+            <XAxis 
+              dataKey="x" 
+              name={viz.params[0]}
+              label={{ value: viz.params[0], position: 'bottom' }}
+            />
+            <YAxis
+              dataKey="y"
+              name={viz.params[1]}
+              label={{ value: viz.params[1], angle: -90, position: 'left' }}
+            />
             <Tooltip />
             <Legend />
-            {viz.params.slice(1).map((param, i) => (
-              <Bar
-                key={param}
-                dataKey={param}
-                fill={COLORS[i % COLORS.length]}
-              />
-            ))}
+            <Bar
+              dataKey="y"
+              name={viz.params[1]}
+              fill={COLORS[0]}
+            />
           </BarChart>
         );
     }

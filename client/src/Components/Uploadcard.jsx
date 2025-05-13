@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
+import axios from "axios";
 
 const UploadCard = () => {
   const [file, setFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const navigate = useNavigate();
 
   const handleFileChange = (event) => {
@@ -17,57 +19,66 @@ const UploadCard = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = ({ target }) => {
-      let data;
-      try {
-        if (file.type.includes("csv")) {
-          data = Papa.parse(target.result, { header: true }).data;
-        } else if (file.type.includes("json")) {
-          data = JSON.parse(target.result);
-        }
+    setIsUploading(true);
+    setUploadStatus("Processing file...");
 
-        // Analyze first 10 rows
-        const sampleData = data.slice(0, 10);
-        const analysis = analyzeData(data, sampleData);
+    try {
+      // Create a promise to handle file reading
+      const fileData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
         
-        localStorage.setItem("chartData", JSON.stringify(data));
-        localStorage.setItem("dataAnalysis", JSON.stringify(analysis));
-        navigate("/visualize");
-      } catch (error) {
-        setUploadStatus("Error processing file: " + error.message);
+        reader.onload = (event) => {
+          try {
+            let data;
+            if (file.type === "application/json") {
+              data = JSON.parse(event.target.result);
+            } else {
+              // Parse CSV using PapaParse
+              const result = Papa.parse(event.target.result, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true
+              });
+              data = result.data;
+            }
+            resolve(data);
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(file);
+      });
+
+      // Store data locally
+      localStorage.setItem("chartData", JSON.stringify(fileData));
+
+      // Attempt to upload to server
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        await axios.post("http://localhost:8001/ai21/upload-dataset", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        setUploadStatus("Upload successful");
+      } catch (uploadError) {
+        console.warn("Server upload failed, continuing with local data:", uploadError);
+        setUploadStatus("Connected to local data");
       }
-    };
 
-    reader.readAsText(file);
-  };
+      // Add a small delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-  const analyzeData = (fullData, sampleData) => {
-    const columns = Object.keys(sampleData[0]);
-    const analysis = {};
+      // Navigate to visualization
+      navigate("/visualize");
 
-    columns.forEach(column => {
-      const uniqueValues = new Set(fullData.map(row => 
-        String(row[column]).toLowerCase().trim()
-      ));
-      
-      // Check if column might be boolean
-      const isBoolean = uniqueValues.size <= 3 && 
-        Array.from(uniqueValues).every(val => 
-          ['yes', 'no', 'maybe', ''].includes(val.toLowerCase())
-        );
-
-      // Check if column is numerical
-      const isNumeric = fullData.every(row => !isNaN(parseFloat(row[column])));
-
-      analysis[column] = {
-        type: isBoolean ? 'boolean' : isNumeric ? 'numeric' : 'text',
-        uniqueValues: Array.from(uniqueValues),
-        sample: sampleData.map(row => row[column])
-      };
-    });
-
-    return analysis;
+    } catch (error) {
+      console.error("Error processing file:", error);
+      setUploadStatus("Error processing file: " + error.message);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -116,9 +127,15 @@ const UploadCard = () => {
                    hover:scale-[1.02] active:scale-[0.98] font-medium
                    disabled:opacity-50 disabled:cursor-not-allowed
                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          disabled={!file}
+          disabled={!file || isUploading}
         >
-          Upload & Visualize
+          {isUploading ? (
+            <div className="flex items-center justify-center">
+              <span className="mr-2">Processing...</span>
+            </div>
+          ) : (
+            "Upload & Visualize"
+          )}
         </button>
 
         {uploadStatus && (

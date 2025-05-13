@@ -90,7 +90,7 @@ const ChatUI = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("http://localhost:8002/ai21/upload-dataset", formData, {
+      const response = await axios.post("http://localhost:8001/ai21/upload-dataset", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
