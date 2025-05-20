@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Plot from 'react-plotly.js';
 import Chat from './Chat';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
-  LineChart, Line, ScatterChart, Scatter,
-  AreaChart, Area
-} from "recharts"; // Import recharts components
 
 const CHART_TYPES = [
   { type: 'bar', label: 'Bar Chart' },
@@ -177,118 +173,183 @@ const CorrelationPage = () => {
     setSelectedParams([]);
   };
 
+  // Replace the renderVisualization function with this Plotly version
   const renderVisualization = (viz, index) => {
     // Prepare data for the chart
     const chartData = storedData.map(row => ({
       x: parseFloat(row[viz.params[0]]),
-      y: parseFloat(row[viz.params[1]]),
-      name: viz.params[1]
-    }));
+      y: parseFloat(row[viz.params[1]])
+    })).filter(point => !isNaN(point.x) && !isNaN(point.y));
 
-    const commonProps = {
-      width: 500,
-      height: 300,
-      data: chartData,
-      margin: { top: 20, right: 30, left: 50, bottom: 50 }
+    // Create a descriptive title
+    const chartTitle = `${viz.params[1]} vs ${viz.params[0]}`;
+    
+    const layout = {
+      title: {
+        text: chartTitle,
+        font: { 
+          size: 18, 
+          color: '#ffffff',
+          weight: 'bold'
+        },
+        x: 0.5,
+        xanchor: 'center'
+      },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      height: 400,
+      margin: { t: 60, r: 30, l: 80, b: 80 },
+      xaxis: {
+        title: {
+          text: viz.params[0],
+          font: { 
+            size: 14,
+            color: '#ffffff',
+            weight: 'bold'
+          },
+          standoff: 20
+        },
+        tickfont: { 
+          color: '#ffffff',
+          size: 12
+        },
+        gridcolor: '#444444',
+        zerolinecolor: '#666666',
+        showgrid: true,
+        zeroline: true,
+        showline: true,
+        linecolor: '#666666'
+      },
+      yaxis: {
+        title: {
+          text: viz.params[1],
+          font: { 
+            size: 14,
+            color: '#ffffff',
+            weight: 'bold'
+          },
+          standoff: 20
+        },
+        tickfont: { 
+          color: '#ffffff',
+          size: 12
+        },
+        gridcolor: '#444444',
+        zerolinecolor: '#666666',
+        showgrid: true,
+        zeroline: true,
+        showline: true,
+        linecolor: '#666666'
+      },
+      showlegend: true,
+      legend: { 
+        font: { color: '#ffffff' },
+        bgcolor: 'rgba(0,0,0,0.3)',
+        bordercolor: '#666666',
+        borderwidth: 1
+      },
+      hoverlabel: {
+        bgcolor: '#1f2937',
+        font: { color: '#ffffff' }
+      }
     };
 
-    switch (viz.chartType) {
-      case 'line':
-        return (
-          <LineChart {...commonProps}>
-            <XAxis 
-              dataKey="x" 
-              name={viz.params[0]}
-              label={{ value: viz.params[0], position: 'bottom' }}
-            />
-            <YAxis
-              dataKey="y"
-              name={viz.params[1]}
-              label={{ value: viz.params[1], angle: -90, position: 'left' }}
-            />
-            <Tooltip />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="y"
-              name={viz.params[1]}
-              stroke={COLORS[0]}
-              dot={{ fill: COLORS[0] }}
-            />
-          </LineChart>
-        );
+    const config = {
+      responsive: true,
+      displayModeBar: true,
+      displaylogo: false,
+      modeBarButtonsToAdd: ['zoom2d', 'pan2d', 'resetScale2d', 'toImage'],
+      toImageButtonOptions: {
+        format: 'png',
+        filename: `${viz.params[1]}_vs_${viz.params[0]}`,
+        height: 500,
+        width: 700,
+        scale: 2
+      }
+    };
 
+    let plotData;
+    switch (viz.chartType) {
       case 'scatter':
-        return (
-          <ScatterChart {...commonProps}>
-            <XAxis 
-              dataKey="x" 
-              name={viz.params[0]}
-              label={{ value: viz.params[0], position: 'bottom' }}
-            />
-            <YAxis
-              dataKey="y"
-              name={viz.params[1]}
-              label={{ value: viz.params[1], angle: -90, position: 'left' }}
-            />
-            <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-            <Legend />
-            <Scatter
-              name={viz.params[1]}
-              data={chartData}
-              fill={COLORS[0]}
-            />
-          </ScatterChart>
-        );
+        plotData = [{
+          x: chartData.map(d => d.x),
+          y: chartData.map(d => d.y),
+          type: 'scatter',
+          mode: 'markers',
+          marker: { 
+            color: COLORS[index % COLORS.length],
+            size: 8,
+            line: {
+              color: '#ffffff',
+              width: 1
+            }
+          },
+          name: `${viz.params[1]} vs ${viz.params[0]}`,
+          hovertemplate: `${viz.params[0]}: %{x}<br>${viz.params[1]}: %{y}<extra></extra>`
+        }];
+        break;
+
+      case 'line':
+        plotData = [{
+          x: chartData.map(d => d.x),
+          y: chartData.map(d => d.y),
+          type: 'scatter',
+          mode: 'lines+markers',
+          line: { 
+            color: COLORS[index % COLORS.length],
+            width: 2
+          },
+          marker: {
+            size: 6
+          },
+          name: `${viz.params[1]} vs ${viz.params[0]}`,
+          hovertemplate: `${viz.params[0]}: %{x}<br>${viz.params[1]}: %{y}<extra></extra>`
+        }];
+        break;
 
       case 'area':
-        return (
-          <AreaChart {...commonProps}>
-            <XAxis 
-              dataKey="x" 
-              name={viz.params[0]}
-              label={{ value: viz.params[0], position: 'bottom' }}
-            />
-            <YAxis
-              dataKey="y"
-              name={viz.params[1]}
-              label={{ value: viz.params[1], angle: -90, position: 'left' }}
-            />
-            <Tooltip />
-            <Legend />
-            <Area
-              type="monotone"
-              dataKey="y"
-              name={viz.params[1]}
-              fill={COLORS[0]}
-              stroke={COLORS[0]}
-            />
-          </AreaChart>
-        );
+        plotData = [{
+          x: chartData.map(d => d.x),
+          y: chartData.map(d => d.y),
+          type: 'scatter',
+          fill: 'tozeroy',
+          fillcolor: `${COLORS[index % COLORS.length]}50`,
+          line: { 
+            color: COLORS[index % COLORS.length],
+            width: 2
+          },
+          name: `${viz.params[1]} vs ${viz.params[0]}`,
+          hovertemplate: `${viz.params[0]}: %{x}<br>${viz.params[1]}: %{y}<extra></extra>`
+        }];
+        break;
 
       default: // bar chart
-        return (
-          <BarChart {...commonProps}>
-            <XAxis 
-              dataKey="x" 
-              name={viz.params[0]}
-              label={{ value: viz.params[0], position: 'bottom' }}
-            />
-            <YAxis
-              dataKey="y"
-              name={viz.params[1]}
-              label={{ value: viz.params[1], angle: -90, position: 'left' }}
-            />
-            <Tooltip />
-            <Legend />
-            <Bar
-              dataKey="y"
-              name={viz.params[1]}
-              fill={COLORS[0]}
-            />
-          </BarChart>
-        );
+        plotData = [{
+          x: chartData.map(d => d.x),
+          y: chartData.map(d => d.y),
+          type: 'bar',
+          marker: { 
+            color: COLORS[index % COLORS.length],
+            line: {
+              color: COLORS[index % COLORS.length],
+              width: 1.5
+            }
+          },
+          name: `${viz.params[1]} vs ${viz.params[0]}`,
+          hovertemplate: `${viz.params[0]}: %{x}<br>${viz.params[1]}: %{y}<extra></extra>`
+        }];
+        break;
     }
+
+    return (
+      <Plot
+        data={plotData}
+        layout={layout}
+        config={config}
+        style={{ width: '100%', height: '400px' }}
+        className="bg-gray-800 rounded-lg p-2"
+      />
+    );
   };
 
   const handleMouseMove = useCallback((e) => {
@@ -324,10 +385,112 @@ const CorrelationPage = () => {
     };
   }, [isResizing, handleMouseMove, stopResizing]);
 
+  const renderCorrelationHeatmap = () => {
+    if (!columns.length || !correlationData.length) return null;
+
+    // Prepare data for heatmap
+    const matrix = [];
+    const zValues = [];
+    columns.forEach(row => {
+      const rowData = [];
+      columns.forEach(col => {
+        const correlation = correlationData.find(
+          c => c.source === row && c.target === col
+        )?.correlation || 0;
+        rowData.push(correlation);
+      });
+      zValues.push(rowData);
+    });
+
+    const data = [{
+      z: zValues,
+      x: columns,
+      y: columns,
+      type: 'heatmap',
+      colorscale: [
+        [0, 'rgb(239, 68, 68)'],     // Red for negative correlations
+        [0.5, 'rgb(75, 85, 99)'],    // Gray for no correlation
+        [1, 'rgb(52, 211, 153)']     // Green for positive correlations
+      ],
+      zmin: -1,
+      zmax: 1,
+      hoverongaps: false,
+      hovertemplate: 
+        '%{y} → %{x}<br>' +
+        'Correlation: %{z:.3f}<extra></extra>',
+    }];
+
+    const layout = {
+      title: {
+        text: 'Correlation Heatmap',
+        font: { size: 24, color: '#ffffff' }
+      },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      width: 800,
+      height: 800,
+      margin: { t: 50, l: 140, r: 40, b: 140 },
+      xaxis: {
+        tickangle: 45,
+        tickfont: { color: '#ffffff' },
+        gridcolor: '#444444'
+      },
+      yaxis: {
+        tickfont: { color: '#ffffff' },
+        gridcolor: '#444444'
+      },
+      font: { color: '#ffffff' }
+    };
+
+    const config = {
+      displayModeBar: true,
+      displaylogo: false,
+      responsive: true,
+      toImageButtonOptions: {
+        format: 'png',
+        filename: 'correlation_heatmap',
+        height: 800,
+        width: 800,
+        scale: 2
+      }
+    };
+
+    return (
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-white mb-4">Correlation Heatmap</h2>
+        <div className="bg-gray-800 rounded-lg p-4 overflow-x-auto">
+          <Plot
+            data={data}
+            layout={layout}
+            config={config}
+            style={{ width: '100%', height: '800px' }}
+          />
+        </div>
+        
+        {/* Legend */}
+        <div className="mt-4 flex items-center justify-center gap-8">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-red-500"></div>
+            <span className="text-sm text-gray-300">Strong Negative (-1.0)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-gray-600"></div>
+            <span className="text-sm text-gray-300">No Correlation (0)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-green-500"></div>
+            <span className="text-sm text-gray-300">Strong Positive (1.0)</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Update the return statement to use the new heatmap
   return (
     <div className="flex h-full min-h-screen bg-gray-900">
       <div className="flex-1 p-6 overflow-auto">
-        {/* Main Content */}
+        {/* Header section remains the same */}
         <div className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">
@@ -353,83 +516,8 @@ const CorrelationPage = () => {
           </div>
         </div>
 
-        {/* Heat Map (Correlation Matrix) */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Correlation Heatmap</h2>
-          <div className="bg-gray-800 rounded-lg p-4 overflow-x-auto">
-            {columns.length > 0 ? (
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="p-2 text-white border border-gray-700">Variables</th>
-                    {columns.map(col => (
-                      <th key={col} className="p-2 text-white border border-gray-700 whitespace-nowrap">
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {columns.map(row => (
-                    <tr key={row}>
-                      <td className="p-2 text-white font-medium border border-gray-700 whitespace-nowrap">
-                        {row}
-                      </td>
-                      {columns.map(col => {
-                        const correlation = correlationData.find(
-                          c => c.source === row && c.target === col
-                        )?.correlation || 0;
-                        
-                        // Calculate color based on correlation value
-                        const getColor = (value) => {
-                          const absValue = Math.abs(value);
-                          if (value > 0) {
-                            return `rgba(52, 211, 153, ${Math.min(absValue + 0.2, 1)})`; // Green for positive
-                          } else if (value < 0) {
-                            return `rgba(239, 68, 68, ${Math.min(absValue + 0.2, 1)})`; // Red for negative
-                          }
-                          return 'rgba(75, 85, 99, 0.2)'; // Gray for zero
-                        };
-
-                        return (
-                          <td 
-                            key={`${row}-${col}`}
-                            className="p-2 text-white text-center border border-gray-700 transition-colors duration-200 hover:opacity-80"
-                            style={{ 
-                              backgroundColor: getColor(correlation),
-                              minWidth: '80px'
-                            }}
-                            title={`${row} → ${col}: ${correlation.toFixed(3)}`}
-                          >
-                            {correlation.toFixed(2)}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-gray-400">No numerical parameters found in the dataset.</p>
-            )}
-          </div>
-          
-          {/* Add color scale legend */}
-          <div className="mt-4 flex items-center justify-center gap-8">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-500"></div>
-              <span className="text-sm text-gray-300">Strong Negative (-1.0)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-gray-600"></div>
-              <span className="text-sm text-gray-300">No Correlation (0)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-500"></div>
-              <span className="text-sm text-gray-300">Strong Positive (1.0)</span>
-            </div>
-          </div>
-        </div>
+        {/* Replace the old table-based heatmap with the new Plotly heatmap */}
+        {renderCorrelationHeatmap()}
 
         {/* Custom Visualization Creation Section */}
         <div className="mb-8">
