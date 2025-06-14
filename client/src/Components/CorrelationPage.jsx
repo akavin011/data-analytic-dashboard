@@ -50,6 +50,7 @@ const CorrelationPage = () => {
   const [columns, setColumns] = useState([]);
   const navigate = useNavigate();
   const storedData = JSON.parse(localStorage.getItem("chartData")) || [];
+  const [rawDataString, setRawDataString] = useState(localStorage.getItem("chartData") || "[]");
 
   // For custom visualization creation
   const [selectedParams, setSelectedParams] = useState([]);
@@ -59,11 +60,19 @@ const CorrelationPage = () => {
   const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
+    const handleStorageChange = () => {
+      setRawDataString(localStorage.getItem("chartData") || "[]");
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  useEffect(() => {
+    const storedData = JSON.parse(rawDataString) || [];
     if (storedData.length === 0) {
       navigate("/");
       return;
     }
-
     // Analyze data types
     const dataAnalysis = analyzeDataTypes(storedData);
     console.log("Data Analysis:", dataAnalysis);
@@ -96,7 +105,7 @@ const CorrelationPage = () => {
     if (cleanDataset.length > 0) {
       calculateCorrelations(cleanDataset, numericalColumns);
     }
-  }, [navigate, storedData]);
+  }, [rawDataString, navigate]);
 
   const calculateCorrelations = (data, numericalColumns) => {
     const correlations = [];

@@ -1,12 +1,14 @@
 # Data Matic 📊
 
 ## Overview
-Data Matic is a powerful MERN (MongoDB, Express, React, Node.js) stack web application designed to streamline data management and visualization.
+Data Matic is a powerful MERN (MongoDB, Express, React, Node.js) stack web application designed to streamline data management and visualization, powered by Llama 3.2 through Ollama for intelligent data analysis.
 
 ## 🚀 Features
-- Comprehensive data analysis
+- Comprehensive data analysis with Llama 3.2
 - Intuitive user interface
 - Responsive design
+- Natural language data querying
+- Dataset visualization and correlation analysis
 
 ## 💻 Tech Stack
 - **Frontend:** React.js
@@ -14,11 +16,16 @@ Data Matic is a powerful MERN (MongoDB, Express, React, Node.js) stack web appli
 - **Database:** MongoDB
 - **State Management:** Redux
 - **Styling:** Tailwind CSS
+- **AI Integration:** Ollama with Llama 3.2
+- **Vector Database:** Chroma
+- **Embeddings:** HuggingFace BGE
 
 ## 🛠️ Prerequisites
 - Node.js (v16.0.0 or later)
 - npm (v8.0.0 or later)
 - MongoDB
+- Python 3.8 or later
+- Ollama with Llama 3.2 installed locally
 
 ## 🔧 Installation
 
@@ -28,50 +35,73 @@ git clone https://github.com/AravindhPrabu2005/Data_Matic.git
 cd Data_Matic
 ```
 
-### Install Dependencies
+### Install Python Dependencies
 ```bash
-# Install backend dependencies
+pip install -r requirements.txt
+```
+
+### Install Backend Dependencies
+```bash
 cd server
 npm install
+```
 
-# Install frontend dependencies
+### Install Frontend Dependencies
+```bash
 cd client
 npm install
 ```
 
+### Install Ollama and Llama 3.2
+1. Install Ollama from [https://ollama.ai/](https://ollama.ai/)
+2. Pull the Llama 3.2 model:
+```bash
+ollama pull llama3.2
+```
+
 ## 🚀 Running the Application
 
-### Start Backend Server
+### Start Ollama Server
 ```bash
-cd backend
+ollama serve
+```
+
+### Start Python Backend (AI Server)
+```bash
+python ollama_api.py
+```
+
+### Start Node.js Backend
+```bash
+cd server
 npm start
 ```
 
 ### Start Frontend Development Server
 ```bash
-cd frontend
+cd client
 npm start
 ```
 
 ## 📦 Build for Production
 ```bash
 # Build frontend
-cd frontend
+cd client
 npm run build
 
 # Start production server
-cd ../backend
+cd ../server
 npm run prod
 ```
 
 ## 🧪 Running Tests
 ```bash
 # Backend tests
-cd backend
+cd server
 npm test
 
 # Frontend tests
-cd frontend
+cd client
 npm test
 ```
 

@@ -59,15 +59,17 @@ const ChatUI = () => {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [file, setFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async () => {
     if (!question.trim()) return;
 
     const newMessages = [...messages, { text: question, sender: "user" }];
     setMessages(newMessages);
+    setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8001/ai21/ask", {
+      const response = await axios.post("http://localhost:8001/ollama/ask", {
         question,
       });
 
@@ -75,7 +77,12 @@ const ChatUI = () => {
       setQuestion("");
     } catch (error) {
       console.error("Error:", error);
-      setMessages([...newMessages, { text: "Error getting response", sender: "bot" }]);
+      setMessages([...newMessages, { 
+        text: "Error: Could not get response from Ollama. Please ensure the Ollama server is running.", 
+        sender: "bot" 
+      }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -90,7 +97,7 @@ const ChatUI = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("http://localhost:8001/ai21/upload-dataset", formData, {
+      const response = await axios.post("http://localhost:8001/ollama/upload-dataset", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -98,14 +105,31 @@ const ChatUI = () => {
       setFile(null);
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload file.");
+      alert("Failed to upload file. Please ensure the Ollama server is running.");
     }
   };
 
   return (
     <div className="flex flex-col items-center w-full h-screen bg-gray-900 text-white p-4">
       <div className="w-full max-w-3xl h-full flex flex-col bg-gray-800 rounded-lg shadow-md p-4 overflow-hidden">
-        <h1 className="text-2xl font-semibold text-center mb-4">Datamatic Bot</h1>
+        <h1 className="text-2xl font-semibold text-center mb-4">Datamatic Bot (Llama 3.2)</h1>
+
+        {/* File Upload Section */}
+        <div className="mb-4 p-4 bg-gray-700 rounded-lg">
+          <input
+            type="file"
+            onChange={handleFileChange}
+            className="mb-2 text-sm text-gray-300"
+            accept=".csv,.xlsx,.xls,.json"
+          />
+          <button
+            onClick={handleUpload}
+            className="w-full bg-green-600 p-2 rounded-lg hover:bg-green-700 transition-colors"
+            disabled={!file}
+          >
+            Upload Dataset
+          </button>
+        </div>
 
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -123,6 +147,13 @@ const ChatUI = () => {
               </div>
             </div>
           ))}
+          {isLoading && (
+            <div className="max-w-[95%] p-4 rounded-xl bg-gray-700">
+              <div className="chat-message">
+                <p>Thinking...</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input Section */}
@@ -133,11 +164,17 @@ const ChatUI = () => {
             placeholder="Ask me anything..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
+            disabled={isLoading}
           />
           <button 
             onClick={handleSendMessage} 
-            className="ml-3 bg-blue-500 p-3 rounded-lg hover:bg-blue-600 transition-colors"
+            className={`ml-3 p-3 rounded-lg transition-colors ${
+              isLoading 
+                ? 'bg-gray-600 cursor-not-allowed' 
+                : 'bg-blue-500 hover:bg-blue-600'
+            }`}
+            disabled={isLoading}
           >
             <Send size={20} />
           </button>
